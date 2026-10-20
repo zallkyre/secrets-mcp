@@ -4,26 +4,6 @@
 
 An MCP server that takes an API key out of the conversation the moment it appears. The agent keeps `{{stripe}}` and calls your APIs through the server, which fills in the real key outside the transcript.
 
-```
-you:   here's my key sk_live_4eC39Hq...
-agent: stored as {{stripe}} — I won't repeat it.
-agent: calling Stripe with {{stripe}}
-        ↑ filled in by secrets-mcp, never typed by the model
-```
-
----
-
-## Why
-
-Every time you paste a key into chat, that key lives in:
-
-- the model provider's request logs
-- your local transcript
-- every later tool call the agent writes (curl, shell, files)
-- any screenshot or code block it prints
-
-`secrets-mcp` closes everything after the paste. It cannot close the paste itself — see [Threat model](#threat-model). Be clear-eyed about that.
-
 ## Install
 
 ```powershell
@@ -45,39 +25,35 @@ It finds the agents on your PC, lists them, and wires up the one you pick:
   >
 ```
 
-Every config it touches is backed up first.
+Every config it touches is backed up first. Re-running is safe — it replaces its own entry instead of duplicating it.
 
-**Supported:** OpenCode · OpenWork · Claude Desktop · Claude Code · Cursor · Windsurf · VS Code · Gemini CLI · Codex CLI · Zed · OpenClaw
+`MIT` · `Python 3.10+` · `Windows first` · [`11 agents`](#supported-agents)
 
-Manual install:
+---
 
-```powershell
-python -m pip install "git+https://github.com/zallkyre/secrets-mcp.git"
+## What it looks like
+
+```
+you:    here's my stripe key sk_live_4eC39Hq…
+agent:  stored as {{stripe}} — I won't repeat it.
+agent:  calling the API with {{stripe}}
+        ↑ filled in locally, after the model stops writing
+
+agent:  200 OK  balance: $1,204.00
 ```
 
-Then add to your agent's MCP config:
+One tool call at the paste. After that the key is out of the model's reach.
 
-```json
-{
-  "mcpServers": {
-    "secrets": { "command": "python", "args": ["-m", "secrets_mcp"] }
-  }
-}
-```
+## Why
 
-OpenCode / OpenWork use a different shape:
+Every time you paste a key into chat, that key lives in:
 
-```json
-{
-  "mcp": {
-    "secrets": {
-      "type": "local",
-      "command": ["python", "-m", "secrets_mcp"],
-      "enabled": true
-    }
-  }
-}
-```
+- the model provider's request logs
+- your local transcript
+- every later tool call the agent writes (curl, shell, files)
+- any screenshot or code block it prints
+
+`secrets-mcp` closes everything after the paste. It cannot close the paste itself — see [Threat model](#threat-model).
 
 ## Tools
 
@@ -91,9 +67,7 @@ OpenCode / OpenWork use a different shape:
 
 No tool returns a raw secret. That is the entire design constraint — a single `get` would make the whole thing pointless, so it does not exist.
 
-### Detected formats
-
-Anthropic · OpenAI · GitHub PAT (`ghp_`, `github_pat_`) · AWS access key · Stripe · Slack · Google API · SendGrid · Resend · Discord bot · Twilio · Groq · JWTs · PEM private keys · high-entropy strings with nearby `api_key`/`token` context.
+**Detected formats:** Anthropic · OpenAI · GitHub PAT · AWS access key · Stripe · Slack · Google API · SendGrid · Resend · Discord bot · Twilio · Groq · JWTs · PEM private keys · high-entropy strings with nearby `api_key`/`token` context.
 
 ## Storage
 
@@ -115,12 +89,58 @@ Vault: `%APPDATA%\secrets-mcp\vault.json`. Override with `SECRETS_MCP_VAULT`.
 
 **Does not protect against**
 
-- **the paste itself.** Once you send a key, it reached the model provider on that request. No tool can undo that. Revoke and rotate if it was a live key.
+- **the paste itself.** Once you send a key, it reached the model provider on that request. No tool can undo that. Revoke and rotate if it was live.
 - a compromised local account — DPAPI decrypts for your user by design
 - a malicious MCP server you installed alongside this one
 - prompt injection that persuades the agent to call `request_with_secret` against an attacker's URL — review the tool calls, and use scoped keys
 
 **Honest framing:** this reduces blast radius. It is not a vault you can safely paste anything into.
+
+---
+
+## Supported agents
+
+| agent | config |
+|---|---|
+| OpenCode | `~/.config/opencode/opencode.jsonc` |
+| OpenWork | `%APPDATA%\openwork\runtime-opencode-config.json` |
+| Claude Desktop | `%APPDATA%\Claude\claude_desktop_config.json` |
+| Claude Code | `~/.claude.json` |
+| Cursor | `~/.cursor/mcp.json` |
+| Windsurf | `~/.codeium/windsurf/mcp_config.json` |
+| VS Code | `%APPDATA%\Code\User\mcp.json` |
+| Gemini CLI | `~/.gemini/settings.json` |
+| Codex CLI | `~/.codex/config.toml` |
+| Zed | `%APPDATA%\Zed\settings.json` |
+| OpenClaw | `~/.openclaw/config.json` |
+
+Only the ones actually installed are offered.
+
+### Manual install
+
+OpenCode / OpenWork:
+
+```json
+{
+  "mcp": {
+    "secrets": {
+      "type": "local",
+      "command": ["python", "-m", "secrets_mcp"],
+      "enabled": true
+    }
+  }
+}
+```
+
+Everything else:
+
+```json
+{
+  "mcpServers": {
+    "secrets": { "command": "python", "args": ["-m", "secrets_mcp"] }
+  }
+}
+```
 
 ## Development
 
