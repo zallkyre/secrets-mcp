@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   Install secrets-mcp and connect it to the AI agents on this PC.
 
@@ -15,9 +15,6 @@
 .PARAMETER All
   Connect every detected agent without prompting.
 
-.PARAMETER Menu
-  Force the interactive picker even when the script was piped.
-
 .EXAMPLE
   .\install.ps1 -List
 #>
@@ -25,7 +22,6 @@
 param(
     [switch]$List,
     [switch]$All,
-    [switch]$Menu,
     [switch]$NoDeps
 )
 
@@ -266,7 +262,12 @@ if ($All) {
 } else {
     Write-Host "  Connect secrets-mcp to which agent(s)?" -ForegroundColor White
     Write-Host "  Enter numbers separated by commas, 'a' for all, or Ctrl+C to abort." -ForegroundColor Gray
-    $answer = Read-Host "  >"
+    try {
+        $answer = Read-Host "  >"
+    } catch {
+        Warn "no interactive console; re-run with -All to connect every detected agent"
+        exit 1
+    }
     if ($answer -match '^\s*a\s*$') { $pick = 1..$found.Count }
     else {
         foreach ($t in ($answer -split '[,\s]+' | Where-Object { $_ })) {
