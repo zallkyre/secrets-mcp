@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>secrets-mcp — give the agent a handle, not the key</title>
+<meta name="description" content="An MCP server that takes API keys out of AI agent conversations. The agent keeps a handle; the real secret stays in an encrypted local vault.">
+<meta property="og:title" content="secrets-mcp">
+<meta property="og:description" content="Give the agent a handle, not the key.">
+<style>
+  :root{
+    --bg:#0d0d0f; --card:#121216; --line:#1e1e24; --fg:#e8e8ea;
+    --muted:#8a8a93; --dim:#5a5a63; --ok:#7ee787; --warn:#e3b341;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--fg)}
+  body{font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif;
+       -webkit-font-smoothing:antialiased}
+  a{color:var(--fg);text-decoration:none;border-bottom:1px solid var(--line)}
+  a:hover{border-color:var(--muted)}
+  .wrap{max-width:860px;margin:0 auto;padding:0 24px}
+  header{padding:80px 0 40px;border-bottom:1px solid var(--line)}
+  h1{font-size:clamp(32px,6vw,52px);line-height:1.1;margin:0 0 16px;letter-spacing:-.03em;font-weight:650}
+  .sub{color:var(--muted);font-size:clamp(16px,2.4vw,20px);margin:0 0 32px;max-width:38ch}
+  .tag{font:11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--dim);
+       display:block;margin-bottom:20px}
+  .install{display:flex;align-items:center;gap:0;border:1px solid var(--line);border-radius:8px;
+           background:var(--card);overflow:hidden;max-width:640px}
+  .install code{font:13px/1.5 var(--mono);color:var(--fg);padding:14px 16px;overflow-x:auto;
+                white-space:nowrap;flex:1;scrollbar-width:none}
+  .install code::-webkit-scrollbar{display:none}
+  .install button{font:11px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;
+    background:transparent;color:var(--muted);border:0;border-left:1px solid var(--line);
+    padding:14px 16px;cursor:pointer}
+  .install button:hover{color:var(--fg);background:#17171c}
+  section{padding:56px 0;border-bottom:1px solid var(--line)}
+  h2{font-size:13px;font-family:var(--mono);letter-spacing:.14em;text-transform:uppercase;
+     color:var(--dim);margin:0 0 28px;font-weight:500}
+  .term{border:1px solid var(--line);border-radius:10px;background:var(--card);overflow:hidden}
+  .term-bar{display:flex;gap:6px;padding:12px 14px;border-bottom:1px solid var(--line)}
+  .dot{width:10px;height:10px;border-radius:50%;background:#26262e}
+  .term pre{margin:0;padding:20px;font:13px/1.75 var(--mono);overflow-x:auto;color:var(--muted)}
+  .you{color:var(--fg)}
+  .handle{color:var(--ok)}
+  .note{color:var(--dim)}
+  .grid{display:grid;gap:2px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+        background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .cell{background:var(--card);padding:22px 20px}
+  .cell h3{margin:0 0 8px;font-size:15px;font-weight:600}
+  .cell p{margin:0;color:var(--muted);font-size:14px}
+  .num{font:11px/1 var(--mono);color:var(--dim);letter-spacing:.1em;display:block;margin-bottom:12px}
+  .agents{display:flex;flex-wrap:wrap;gap:8px;margin:0;padding:0;list-style:none}
+  .agents li{font:12px/1 var(--mono);color:var(--muted);border:1px solid var(--line);
+             border-radius:999px;padding:8px 12px}
+  .honest{border:1px solid #2a2413;background:#141208;border-radius:10px;padding:24px}
+  .honest h3{margin:0 0 14px;font-size:14px;color:var(--warn);font-family:var(--mono);
+             letter-spacing:.08em;text-transform:uppercase;font-weight:500}
+  .honest p{margin:0 0 12px;color:var(--muted);font-size:14px}
+  .honest p:last-child{margin:0}
+  .honest strong{color:var(--fg);font-weight:600}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{text-align:left;padding:12px 0;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--dim);font:11px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;
+     font-weight:500;width:44%}
+  td{color:var(--muted)}
+  td code{font:12px/1 var(--mono);color:var(--fg);background:var(--card);padding:3px 6px;border-radius:4px}
+  footer{padding:40px 0 72px;color:var(--dim);font-size:13px;display:flex;gap:20px;
+         flex-wrap:wrap;justify-content:space-between}
+  footer a{color:var(--muted);border:0}
+  footer a:hover{color:var(--fg)}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <span class="tag">MCP server · Windows first</span>
+    <h1>Give the agent a handle,<br>not the key.</h1>
+    <p class="sub">Takes your API key out of the conversation the moment it appears. The model never types it again.</p>
+    <div class="install">
+      <code id="cmd">irm https://raw.githubusercontent.com/zallkyre/secrets-mcp/main/install.ps1 | iex</code>
+      <button id="copy">copy</button>
+    </div>
+  </header>
+
+  <section>
+    <h2>What it looks like</h2>
+    <div class="term">
+      <div class="term-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+      <pre><span class="you">you</span>    here's my stripe key sk_live_4eC39Hq…
+<span class="you">agent</span>  stored as <span class="handle">{{stripe}}</span> — I won't repeat it.
+<span class="you">agent</span>  calling the API with <span class="handle">{{stripe}}</span>
+       <span class="note">↑ filled in locally, after the model finishes writing</span>
+
+<span class="you">agent</span>  <span class="handle">200 OK</span>  balance: $1,204.00</pre>
+    </div>
+  </section>
+
+  <section>
+    <h2>How it works</h2>
+    <div class="grid">
+      <div class="cell">
+        <span class="num">01</span>
+        <h3>Paste</h3>
+        <p>The agent sees a key and calls <code>stage_secret</code> with the text.</p>
+      </div>
+      <div class="cell">
+        <span class="num">02</span>
+        <h3>Swap</h3>
+        <p>You get the same text back with <code>{{stripe}}</code>. The key goes to an encrypted local vault.</p>
+      </div>
+      <div class="cell">
+        <span class="num">03</span>
+        <h3>Use</h3>
+        <p><code>request_with_secret</code> resolves the handle server-side. The key never re-enters context.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Connects to</h2>
+    <ul class="agents">
+      <li>OpenCode</li><li>OpenWork</li><li>Claude Desktop</li><li>Claude Code</li>
+      <li>Cursor</li><li>Windsurf</li><li>VS Code</li><li>Gemini CLI</li>
+      <li>Codex CLI</li><li>Zed</li><li>OpenClaw</li>
+    </ul>
+    <p style="color:var(--dim);font-size:13px;margin:18px 0 0">
+      The installer detects what you actually have installed and only offers those.
+    </p>
+  </section>
+
+  <section>
+    <h2>Storage</h2>
+    <table>
+      <tr><th>Windows</th><td>DPAPI — bound to your user account, no master password</td></tr>
+      <tr><th>macOS / Linux</th><td>AES-GCM with a key file at <code>~/.secrets-mcp/key</code></td></tr>
+      <tr><th>Vault</th><td><code>%APPDATA%\secrets-mcp\vault.json</code></td></tr>
+      <tr><th>Never returned</th><td>A raw secret, by any tool, ever</td></tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>Threat model</h2>
+    <div class="honest">
+      <h3>The part most tools hide</h3>
+      <p><strong>This cannot un-send a key.</strong> The moment you paste it, it reached the model provider on that request. Nothing local can undo that.</p>
+      <p>What it does close: the key being written into shell commands, curl calls, files, logs, or later prompts. That is where most leaks actually happen.</p>
+      <p>Treat it as blast-radius reduction, not a vault you can paste anything into. If a live key was exposed, rotate it.</p>
+    </div>
+  </section>
+
+  <footer>
+    <span>MIT · built by <a href="https://github.com/zallkyre">zallkyre</a></span>
+    <a href="https://github.com/zallkyre/secrets-mcp">source →</a>
+  </footer>
+</div>
+
+<script>
+  document.getElementById('copy').addEventListener('click', async (e) => {
+    const el = e.currentTarget;
+    try {
+      await navigator.clipboard.writeText(document.getElementById('cmd').textContent.trim());
+      el.textContent = 'copied';
+    } catch {
+      el.textContent = 'ctrl+c';
+    }
+    setTimeout(() => (el.textContent = 'copy'), 1600);
+  });
+</script>
+</body>
+</html>

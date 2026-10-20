@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "secrets-mcp"
+version = "0.1.0"
+description = "Give the agent a handle, not the key. Secret handoff MCP server for AI agents."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "zallkyre" }]
+keywords = ["mcp", "ai-agents", "secrets", "security", "llm"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: Microsoft :: Windows",
+  "Topic :: Security",
+]
+dependencies = ["mcp>=1.2.0"]
+
+[project.optional-dependencies]
+linux = ["cryptography>=41"]
+
+[project.scripts]
+secrets-mcp = "secrets_mcp.server:main"
+
+[project.urls]
+Homepage = "https://zallkyre.github.io/secrets-mcp/"
+Repository = "https://github.com/zallkyre/secrets-mcp"
+
+[tool.setuptools]
+packages = ["secrets_mcp"]
