@@ -18,8 +18,20 @@ from . import detect, proxy, store
 
 __version__ = "0.1.0"
 
+# mcp 2.x reports serverInfo.version from the client-visible server object;
+# without this it shows "" because the package is not installed as a distribution
+_extra = {}
+try:
+    import inspect as _inspect
+
+    if "version" in _inspect.signature(_Server.__init__).parameters:
+        _extra["version"] = __version__
+except Exception:
+    pass
+
 mcp = _Server(
     "secrets-mcp",
+    **_extra,
     instructions=(
         "Secret handoff for AI agents. When the user pastes an API key or "
         "token, call stage_secret with the pasted text. It returns the same "
