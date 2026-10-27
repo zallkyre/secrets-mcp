@@ -155,4 +155,4 @@ MIT
 
 ---
 
-**LLM guide** — Give the agent a handle, not the key. MCP server that keeps API keys out of AI agent conversations. · Stack: Python · Run: `pip install .` · License: MIT
+**LLM guide** — Give the agent a handle, not the key. MCP server that keeps API keys out of AI agent conversations. · Stack: Python · Run: `pip install .` · License: MIT-0 - no conditions, resale allowed
