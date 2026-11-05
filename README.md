@@ -2,6 +2,8 @@
 
 **Give the agent a handle, not the key.**
 
+[![M8ven Score](https://m8ven.ai/badge/mcp/zallkyre-secrets-mcp-e462c7?v=a005e15237895fcf3001843ab34ade69)](https://m8ven.ai/mcp/zallkyre-secrets-mcp-e462c7?s=readme)
+
 An MCP server that takes an API key out of the conversation the moment it appears. The agent keeps `{{stripe}}` and calls your APIs through the server, which fills in the real key outside the transcript.
 
 ## Install
