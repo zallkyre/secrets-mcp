@@ -14,9 +14,31 @@ try:  # mcp 2.x
 except ImportError:  # mcp 1.x
     from mcp.server.fastmcp import FastMCP as _Server
 
+from mcp.types import ToolAnnotations
+
 from . import detect, proxy, store
 
 __version__ = "0.1.0"
+
+
+def _hints(
+    *,
+    read_only: bool,
+    destructive: bool,
+    idempotent: bool,
+    open_world: bool,
+) -> ToolAnnotations:
+    """Explicit hints for every tool.
+
+    Every tool declares all four, even where the value is the default
+    false, because hosts and directories reject tools with hints missing.
+    """
+    return ToolAnnotations(
+        read_only_hint=read_only,
+        destructive_hint=destructive,
+        idempotent_hint=idempotent,
+        open_world_hint=open_world,
+    )
 
 # mcp 2.x reports serverInfo.version from the client-visible server object;
 # without this it shows "" because the package is not installed as a distribution
@@ -46,7 +68,7 @@ def _err(exc: Exception) -> str:
     return json.dumps({"ok": False, "error": str(exc)}, indent=2)
 
 
-@mcp.tool()
+@mcp.tool(annotations=_hints(read_only=False, destructive=False, idempotent=True, open_world=False))
 def stage_secret(text: str, name: str | None = None) -> str:
     """Store any secrets in `text` and return it with handles substituted.
 
@@ -98,7 +120,7 @@ def stage_secret(text: str, name: str | None = None) -> str:
         return _err(exc)
 
 
-@mcp.tool()
+@mcp.tool(annotations=_hints(read_only=True, destructive=False, idempotent=True, open_world=False))
 def list_secrets() -> str:
     """List stored handles with fingerprints. Never returns secret values."""
     try:
@@ -108,7 +130,7 @@ def list_secrets() -> str:
         return _err(exc)
 
 
-@mcp.tool()
+@mcp.tool(annotations=_hints(read_only=False, destructive=True, idempotent=False, open_world=True))
 def request_with_secret(
     method: str,
     url: str,
@@ -133,7 +155,7 @@ def request_with_secret(
         return _err(exc)
 
 
-@mcp.tool()
+@mcp.tool(annotations=_hints(read_only=False, destructive=True, idempotent=True, open_world=False))
 def revoke_secret(name: str) -> str:
     """Delete a stored handle. The real secret is destroyed locally."""
     try:
@@ -150,7 +172,7 @@ def revoke_secret(name: str) -> str:
         return _err(exc)
 
 
-@mcp.tool()
+@mcp.tool(annotations=_hints(read_only=True, destructive=False, idempotent=True, open_world=False))
 def vault_info() -> str:
     """Where the vault lives and how many handles it holds. No values."""
     try:
